@@ -37,6 +37,13 @@ function mergeDeepRecursive<T extends { [key: string]: any }>(
         return { value: b, complete: true };
     }
 
+    // Merging an object into itself is a no-op. Without this, an instance shared by both sides
+    // is walked in full: e.g. ShippingMethod.allCheckers holds the configured checkers, which
+    // reference the DI graph, and that cyclic graph defeats both guards below. See #5428.
+    if (a === b) {
+        return { value: a, complete: true };
+    }
+
     if (mergedPairs.get(a)?.has(b)) {
         return { value: a, complete: true };
     }
