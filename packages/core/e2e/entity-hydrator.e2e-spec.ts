@@ -1,5 +1,6 @@
 // @ts-nocheck -- file relies on queries that are defined at runtime
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { DEFAULT_CHANNEL_CODE } from '@vendure/common/lib/shared-constants';
 import {
     ActiveOrderService,
     Asset,
@@ -462,7 +463,7 @@ describe('Entity hydration', () => {
     // https://github.com/vendurehq/vendure/issues/5428
     // ShippingMethod holds the configured ShippingEligibilityChecker instances, which reference
     // the DI graph (CacheService etc.). Merging a freshly loaded ShippingMethod into one already
-    // on the target used to walk that whole cyclic graph and never return.
+    // on the target must not walk those checker instances.
     describe('merging into an already-loaded ShippingMethod', () => {
         async function createOrderWithShippingLine() {
             await shopClient.asAnonymousUser();
@@ -500,7 +501,9 @@ describe('Entity hydration', () => {
             await hydrator.hydrate(ctx, order, { relations: ['shippingLines.shippingMethod'] });
             await hydrator.hydrate(ctx, order, { relations: ['shippingLines.shippingMethod.channels'] });
 
-            expect(order.shippingLines[0].shippingMethod.channels.length).toBeGreaterThan(0);
+            expect(order.shippingLines[0].shippingMethod.channels.map(c => c.code)).toEqual([
+                DEFAULT_CHANNEL_CODE,
+            ]);
         });
     });
 
